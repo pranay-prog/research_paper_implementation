@@ -150,6 +150,14 @@
   @keyframes ping{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
   .fade-in{animation:fadeIn .25s ease}
   @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* AGENTIC TABLE */
+  .agentic-table{width:100%;border-collapse:collapse;font-size:12px}
+  .agentic-table th{text-align:left;padding:8px 6px;font-weight:500;border-bottom:0.5px solid var(--border-mid)}
+  .agentic-table td{padding:8px 6px;border-bottom:0.5px solid var(--border-light);vertical-align:top}
+  .agentic-list{font-size:12px;color:var(--text-secondary);line-height:2;padding-left:16px;margin:0}
+  .agentic-list li{margin-bottom:2px}
+  .agentic-list b{color:var(--text-primary)}
 </style>
 </head>
 <body>
@@ -168,6 +176,7 @@
     <button class="sb-item" onclick="showPanel('eval')"><span class="dot dot-green"></span>System Evaluation</button>
     <button class="sb-item" onclick="showPanel('security')"><span class="dot dot-green"></span>Security</button>
     <button class="sb-item" onclick="showPanel('alerts')"><span class="dot dot-amber"></span>Alert Log</button>
+    <button class="sb-item" onclick="showPanel('agentic')"><span class="dot dot-green"></span>Agentic AI</button>
     <div class="sb-section">Data source</div>
     <button class="sb-item active" id="sb-sim" onclick="setSource('sim')"><span class="dot dot-green"></span>Simulated data</button>
     <div class="sb-footer">
@@ -369,6 +378,55 @@
         </div>
       </div>
 
+      <!-- ── AGENTIC AI PANEL ── -->
+      <div id="panel-agentic" class="fade-in" style="display:none">
+        <div class="panel">
+          <div class="panel-title"><span>Agentic AI vs Traditional Pipeline — per stage</span></div>
+          <div style="overflow-x:auto">
+            <table class="agentic-table">
+              <thead>
+                <tr>
+                  <th style="color:var(--text-secondary)">Pipeline stage</th>
+                  <th style="color:var(--green-text)">Agentic AI (this system)</th>
+                  <th style="color:var(--text-secondary)">Traditional / non-agentic</th>
+                </tr>
+              </thead>
+              <tbody id="agentic-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="panel">
+            <div class="panel-title"><span>What makes it "agentic" here</span></div>
+            <ul class="agentic-list">
+              <li>Each stage is an <b>independent agent</b> with its own responsibility, not one script running top to bottom</li>
+              <li>Agents communicate through a <b>shared blackboard</b> (fused state) instead of direct function calls</li>
+              <li>The Anomaly Detection Agent makes an <b>autonomous classification decision</b> per cycle — no human sets a fixed threshold rule</li>
+              <li>The Evaluation Agent continuously <b>scores the system's own reasoning quality</b> (task success, coherence, cost) — the system monitors itself</li>
+              <li>Agents can be <b>retrained or adapted independently</b> — e.g. the Isolation Forest can retrain without touching Validation logic</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <div class="panel-title"><span>What a non-agentic version would look like</span></div>
+            <ul class="agentic-list">
+              <li>One monolithic script: read serial → <code>if pressure &gt; 600: alert()</code> → print to console</li>
+              <li>Fixed <b>if/else thresholds</b> instead of a learned anomaly model — breaks when conditions drift</li>
+              <li>No shared memory — each check re-reads raw sensor values with no fused context</li>
+              <li>No self-evaluation — you'd only find out the system was misclassifying after the fact</li>
+              <li>Adding a new sensor or rule means <b>editing the whole script</b>, not adding one agent</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title"><span>Where this system sits today</span></div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.9">
+            Right now the six agents are <b style="color:var(--text-primary)">coordinated, specialized, and self-evaluating</b>, and the Anomaly Detection Agent learns rather than following fixed rules — that's the agentic core. What isn't yet agentic: no agent currently <b style="color:var(--text-primary)">decides on its own to take a corrective action</b> (e.g. triggering a physical response or re-routing communication) — decisions still stop at "alert a human." The README lists this as a future enhancement ("Autonomous response agents"), which would be the next step toward full autonomy.
+          </div>
+        </div>
+      </div>
+
     </div><!-- /page-content -->
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -455,9 +513,9 @@ function showPanel(p){
   const el=document.getElementById('panel-'+p);
   if(el){el.style.display='';el.classList.remove('fade-in');void el.offsetWidth;el.classList.add('fade-in');}
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
-  const idx={env:0,ai:1,agents:2,eval:3,security:4,alerts:5};
+  const idx={env:0,ai:1,agents:2,eval:3,security:4,alerts:5,agentic:6};
   document.querySelectorAll('.sb-item')[idx[p]]?.classList.add('active');
-  const titles={env:'Environmental Panel',ai:'AI Decision Panel',agents:'Agent Network',eval:'System Evaluation',security:'Security Panel',alerts:'Alert Log'};
+  const titles={env:'Environmental Panel',ai:'AI Decision Panel',agents:'Agent Network',eval:'System Evaluation',security:'Security Panel',alerts:'Alert Log',agentic:'Agentic AI'};
   document.getElementById('panel-title').textContent=titles[p]||p;
   currentPanel=p;
 }
@@ -737,6 +795,26 @@ function logPacket(line,ok){
   log.scrollTop=log.scrollHeight;
 }
 
+// ── AGENTIC AI COMPARISON TABLE ─────────────────────────────
+const agenticRows=[
+  ['Data acquisition','Dedicated agent listens continuously, timestamps every packet on its own schedule','Manual polling / single read() call in main loop, no independent timing'],
+  ['Validation','Autonomous agent rejects bad packets and reports rejection rate back to the blackboard','Hardcoded range checks inline with acquisition — no separation, no reporting'],
+  ['Fusion','Agent builds a shared feature vector that other agents subscribe to (blackboard memory)','Global variables passed directly between functions, no shared state model'],
+  ['Anomaly detection','Isolation Forest agent learns "normal" from data and adapts; outputs a score + confidence','Fixed thresholds (e.g. O2 &lt; 4 = alert) set once by a developer, never adapt'],
+  ['Evaluation','Separate agent grades the system\'s own performance every cycle (precision, drift, coherence)','No self-monitoring — errors only surface as user complaints or crashes'],
+  ['Alerting','Agent correlates multiple signals (score + O2 + pressure + rejection rate) before alerting','Single-condition alerts fired independently, no cross-signal correlation']
+];
+function renderAgenticTable(){
+  const el=document.getElementById('agentic-table-body');
+  if(!el) return;
+  el.innerHTML=agenticRows.map(r=>`
+    <tr>
+      <td style="color:var(--text-primary);font-weight:500;white-space:nowrap">${r[0]}</td>
+      <td style="color:var(--text-secondary)">${r[1]}</td>
+      <td style="color:var(--text-tertiary)">${r[2]}</td>
+    </tr>`).join('');
+}
+
 // ── SIMULATION ────────────────────────────────────────────
 function simTick(){
   const t=Date.now()/1000;
@@ -769,6 +847,7 @@ function stopSim(){
 }
 
 // ── INIT ──────────────────────────────────────────────────
+renderAgenticTable();
 startSim();
 addAlert('normal','System initialized — all 6 agents online');
 addAlert('normal','Running in simulation mode. Use "Connect hardware" to switch to live data.');
